@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 class DatabaseManager {
   constructor() {
@@ -12,14 +15,20 @@ class DatabaseManager {
 
   async _connect() {
     try {
-      await mongoose.connect(
-        "mongodb+srv://mithsah1325:mithsah1325@cluster0.jeqai.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-        { useNewUrlParser: true, useUnifiedTopology: true } // Optional config
-      );
+      const mongoURI = process.env.MONGO_URI; // Use environment variable
+      if (!mongoURI) {
+        throw new Error("MongoDB URI is not defined in .env file");
+      }
+
+      await mongoose.connect(mongoURI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+
       console.log("MongoDB connected successfully");
     } catch (error) {
-      console.error("MongoDB connection failed:", error);
-      process.exit(1);
+      console.error("MongoDB connection failed:", error.message);
+      process.exit(1); // Exit 
     }
   }
 }
