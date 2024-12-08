@@ -1,190 +1,106 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
-const WorkoutHistory = ({ userId }) => {
+const WorkoutHistory = () => {
   const [workouts, setWorkouts] = useState([]);
-  const [selectedStatus, setSelectedStatus] = useState("pending");
-  const [error, setError] = useState("");
-  const [editing, setEditing] = useState(false);
-  const [currentId, setCurrentId] = useState(null);
-  const [formData, setFormData] = useState({
-    exercise: "",
-    date: "",
-    status: "",
-    dayNumber: "",
-  });
+  const [toggleStatus, setToggleStatus] = useState("pending"); // State for toggle
+  const [error, setError] = useState({});
 
-  // Fetch workouts from the backend
   useEffect(() => {
+    // Fetch workouts from the API
     const fetchWorkouts = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/workouts", {
-          params: { userId, status: selectedStatus },
-        });
+        const response = await axios.get("http://localhost:5000/api/workouts");
         setWorkouts(response.data);
       } catch (err) {
-        console.error("Error fetching workouts", err);
-        setError("There was an error fetching the workouts.");
+        console.error("Error fetching workouts:", err);
+        setError({ global: "Unable to fetch workouts. Please try again later." });
       }
     };
-
     fetchWorkouts();
-  }, [selectedStatus, userId]);
+  }, []);
 
-  // Handle status change (Mark as Complete)
-  const handleMarkComplete = async (workoutId) => {
+  // Handle toggle change
+  const handleToggle = (status) => {
+    setToggleStatus(status);
+  };
+
+  // Filter workouts based on the status
+  const filteredWorkouts = workouts.filter((workout) =>
+    toggleStatus === "pending" ? workout.status === "pending" : workout.status === "completed"
+  );
+
+  // Mark workout as completed
+  const markAsCompleted = async (workoutId) => {
     try {
-      const response = await axios.put(
-        `http://localhost:5000/api/workouts/complete/${workoutId}`
-      );
-
-      // Update the workouts list by changing the status to "completed"
+      const response = await axios.put(`http://localhost:5000/api/workouts/${workoutId}`, {
+        status: "completed",
+      });
+      // After updating, fetch the latest workouts
       const updatedWorkouts = workouts.map((workout) =>
-        workout._id === workoutId
-          ? { ...workout, status: "completed" }
-          : workout
+        workout._id === workoutId ? { ...workout, status: "completed" } : workout
       );
       setWorkouts(updatedWorkouts);
     } catch (err) {
-      console.error("Error marking workout as complete", err);
-      setError("There was an error marking the workout as complete.");
+      console.error("Error updating workout status:", err);
+      setError({ global: "Unable to update workout. Please try again later." });
     }
-  };
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      if (editing) {
-        // If editing, send a PUT request to update the workout
-        const response = await axios.put(
-          `http://localhost:5000/api/workouts/${currentId}`,
-          formData
-        );
-
-        if (response.status === 200) {
-          setWorkouts(
-            workouts.map((workout) =>
-              workout._id === currentId ? { ...workout, ...formData } : workout
-            )
-          );
-          resetForm();
-        }
-      }
-    } catch (err) {
-      console.error("Error saving workout", err);
-      setError("There was an error saving the workout. Please try again.");
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({ exercise: "", date: "", status: "", dayNumber: "" });
-    setEditing(false);
-    setCurrentId(null);
   };
 
   return (
     <div className="container mx-auto mt-12 px-6 sm:px-12">
-      <h2 className="text-4xl font-semibold text-center text-gray-800 mb-8">Workout History</h2>
+      <h2 className="text-4xl font-semibold text-center text-gray-800 mb-8">
+        Workout Manager
+      </h2>
 
-      {/* Error Message */}
-      {error && <div className="text-red-500 text-center mb-4">{error}</div>}
-
-      {/* Form to edit workout */}
-      {editing && (
-        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6 max-w-3xl mx-auto mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <input
-                type="text"
-                name="exercise"
-                value={formData.exercise}
-                onChange={handleChange}
-                placeholder="Exercise Name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <input
-                type="text"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                placeholder="Status"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <input
-                type="number"
-                name="dayNumber"
-                value={formData.dayNumber}
-                onChange={handleChange}
-                placeholder="Day Number"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md mt-6 hover:bg-blue-700 transition duration-300"
-          >
-            Update Workout
-          </button>
-        </form>
+      {error.global && (
+        <div className="text-red-500 text-center mb-4">{error.global}</div>
       )}
 
-      {/* Status Toggle */}
-      <div className="flex justify-center mb-8">
+      {/* Toggle Buttons */}
+      <div className="flex justify-center space-x-4 mb-8">
         <button
-          onClick={() => setSelectedStatus("pending")}
-          className={`${
-            selectedStatus === "pending" ? "bg-blue-600 text-white" : "bg-gray-200"
-          } px-4 py-2 rounded-l-lg`}
+          onClick={() => handleToggle("pending")}
+          className={`px-6 py-2 rounded-lg text-white ${toggleStatus === "pending" ? "bg-blue-600" : "bg-gray-400"} hover:bg-blue-700 transition duration-300`}
         >
           Pending Workouts
         </button>
         <button
-          onClick={() => setSelectedStatus("completed")}
-          className={`${
-            selectedStatus === "completed" ? "bg-blue-600 text-white" : "bg-gray-200"
-          } px-4 py-2 rounded-r-lg`}
+          onClick={() => handleToggle("completed")}
+          className={`px-6 py-2 rounded-lg text-white ${toggleStatus === "completed" ? "bg-blue-600" : "bg-gray-400"} hover:bg-blue-700 transition duration-300`}
         >
           Completed Workouts
         </button>
       </div>
 
-      {/* Workouts List */}
+      {/* Display filtered workouts based on toggle */}
       <div className="bg-white shadow-md rounded-lg p-6 max-w-3xl mx-auto">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-6">
+          {toggleStatus === "pending" ? "Pending Workouts" : "Completed Workouts"}
+        </h3>
         <ul className="space-y-4">
-          {workouts.length === 0 ? (
-            <li className="text-center text-gray-500">No workouts found.</li>
+          {filteredWorkouts.length === 0 ? (
+            <li className="text-center text-gray-500">No workouts to show. Add some!</li>
           ) : (
-            workouts.map((workout) => (
-              <li key={workout._id} className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-xl font-semibold">{workout.exercise}</h3>
-                  <p>{workout.date}</p>
-                </div>
-                {selectedStatus === "pending" && (
+            filteredWorkouts.map((workout) => (
+              <li
+                key={workout._id}
+                className="p-4 bg-gray-50 border border-gray-200 rounded-lg shadow-sm hover:bg-gray-100 transition duration-300"
+              >
+                <p className="text-lg font-semibold text-gray-700">
+                  {`${workout.exercise} - Day ${workout.dayNumber}`}
+                </p>
+                <p className="text-sm text-gray-600">{`Status: ${workout.status}`}</p>
+                <p className="text-sm text-gray-600">{`Date: ${new Date(workout.date).toLocaleDateString()}`}</p>
+
+                {/* Only show the button for pending workouts */}
+                {workout.status === "pending" && (
                   <button
-                    onClick={() => handleMarkComplete(workout._id)}
-                    className="bg-green-500 text-white px-4 py-2 rounded-lg"
+                    onClick={() => markAsCompleted(workout._id)}
+                    className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300"
                   >
-                    Mark as Complete
+                    Mark as Completed
                   </button>
                 )}
               </li>

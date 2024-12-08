@@ -1,36 +1,58 @@
-// controllers/goalController.js
-import Goal from "../models/Goal.js";  // Assuming you have a Goal model for storing goals
+import Goal from '../models/Goal.js';
 
-// Save a goal
+// Create a new goal
 export const saveGoal = async (req, res) => {
-  const { goal, deadline, email } = req.body;
-  
   try {
-    const newGoal = new Goal({
-      goal,
-      deadline,
-      email
-    });
-    const savedGoal = await newGoal.save();
-    res.status(201).json(savedGoal);
-  } catch (error) {
-    console.error("Error saving goal:", error);
+    const { email, fitnessGoal, date } = req.body;
+    const newGoal = new Goal({ email, fitnessGoal, date });
+    await newGoal.save();
+    res.status(201).json(newGoal);
+  } catch (err) {
+    console.error("Error saving goal:", err);
     res.status(500).json({ message: "Error saving goal" });
   }
 };
 
-// Get goal by email
-export const getGoalByEmail = async (req, res) => {
-  const { email } = req.query;
-  
+// Get all goals
+export const getGoals = async (req, res) => {
   try {
-    const goal = await Goal.findOne({ email });
-    if (!goal) {
-      return res.status(404).json({ message: "Goal not found for this email" });
-    }
+    const goals = await Goal.find();
+    res.status(200).json(goals);
+  } catch (err) {
+    console.error("Error fetching goals:", err);
+    res.status(500).json({ message: "Error fetching goals" });
+  }
+};
+
+// Get goal by ID
+export const getGoalById = async (req, res) => {
+  try {
+    const goal = await Goal.findById(req.params.id);
+    if (!goal) return res.status(404).json({ message: "Goal not found" });
     res.status(200).json(goal);
-  } catch (error) {
-    console.error("Error fetching goal:", error);
+  } catch (err) {
     res.status(500).json({ message: "Error fetching goal" });
+  }
+};
+
+// Update goal by ID
+export const updateGoal = async (req, res) => {
+  try {
+    const goal = await Goal.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!goal) return res.status(404).json({ message: "Goal not found" });
+    res.status(200).json(goal);
+  } catch (err) {
+    res.status(500).json({ message: "Error updating goal" });
+  }
+};
+
+// Delete goal by ID
+export const deleteGoal = async (req, res) => {
+  try {
+    const goal = await Goal.findByIdAndDelete(req.params.id);
+    if (!goal) return res.status(404).json({ message: "Goal not found" });
+    res.status(200).json({ message: "Goal deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Error deleting goal" });
   }
 };

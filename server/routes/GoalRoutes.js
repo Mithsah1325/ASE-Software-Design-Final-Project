@@ -1,13 +1,12 @@
-// routes/goalRoutes.js
-import express from "express";
-import { saveGoal, getGoalByEmail } from "../controllers/goalController.js";
+import express from 'express';
+import { saveGoal, getGoals, getGoalById, updateGoal, deleteGoal } from '../controllers/GoalController.js';
 
 const router = express.Router();
 
-// Save a goal
-router.post("/Goal", saveGoal);
-
-// Get a saved goal by email
-router.get("/getGoal", getGoalByEmail);
+router.post('/', saveGoal);
+router.get('/', getGoals);
+router.get('/:id', getGoalById);
+router.put('/:id', updateGoal);
+router.delete('/:id', deleteGoal);
 
 export default router;

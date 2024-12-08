@@ -1,20 +1,11 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const goalSchema = new mongoose.Schema({
-  goal: {
-    type: String,
-    required: true,
-  },
-  deadline: {
-    type: String, 
-    required: true,
-  },
-  email: {
-    type: String,
-    required: true,
-  },
+  email: { type: String, required: true },
+  fitnessGoal: { type: String, required: true },
+  date: { type: Date, required: true },
 });
 
-const Goal = mongoose.model("Goal", goalSchema);
+const Goal = mongoose.model('Goal', goalSchema);
 
 export default Goal;
